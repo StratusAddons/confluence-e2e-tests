@@ -19,6 +19,8 @@ class LoginPage extends Page {
     await this.passwordInput.waitForDisplayed();
     await this.passwordInput.setValue(password);
     await this.continueBtn.click();
+
+    await expect($("body")).toHaveText(/Your apps/);
   }
 
   public open() {
