@@ -2,9 +2,6 @@ import Page from "./page";
 import Pages from "./pages.page";
 
 export default class SpacePage extends Page {
-  get createSpaceLink() {
-    return $('a[data-test-id="create-space-link"]');
-  }
   get nameField() {
     return $('input[name="name"]');
   }
@@ -16,52 +13,42 @@ export default class SpacePage extends Page {
   }
 
   get spacesListGroup() {
-    return $(
-      "/html/body/div[1]/div[2]/div[1]/div[2]/nav/div[1]/div[1]/div/div[1]/div/div[4]/div/div"
-    );
+    return $("button=Spaces");
   }
 
   get createSpaceMenuItem() {
-    return $("/html/body/div[2]/div[5]/div[1]/div/div/div/div[4]/div[2]/div");
+    return $("button=Create a space");
   }
 
-  get createContentButton() {
-    return $('button[id="contextual-create-content-button"]');
+  get createButton() {
+    return $('span[role="img"][aria-label="Create"]');
   }
 
   get createPageButton() {
-    return $(
-      "/html/body/div[1]/div[2]/div/div[2]/nav/div[1]/div[1]/div/div[2]/div[5]/div[2]/div/div/div[1]/div/div[2]/div/div[3]/div/div[1]/ul/li[2]"
-    );
+    return $(`//span[@data-item-title="true" and .//span[text()="Page"]]`);
   }
 
   /**
    * Create a new space with given name/key
    */
   public async create(name: string, key: string) {
-    await this.spacesListGroup.waitForDisplayed();
-    await this.spacesListGroup.click();
+    await this.click(this.spacesListGroup);
 
-    await this.createSpaceMenuItem.waitForDisplayed();
-    await this.createSpaceMenuItem.waitForClickable();
-    await this.createSpaceMenuItem.click();
+    await this.click(this.createSpaceMenuItem);
 
     await this.nameField.setValue(name);
 
-    const nextBtn = await $("button=Next");
-    await nextBtn.waitForClickable();
-    await nextBtn.click();
+    await this.click($("button=Next"));
 
-    const createSpaceBtn = await $("button=Create space");
-    await createSpaceBtn.waitForClickable();
-    await createSpaceBtn.click();
+    await this.click($("button=Create space"));
 
     await $(`*=${name}`).waitForDisplayed();
   }
 
   public async createPage() {
-    await this.createContentButton.click();
-    await this.createPageButton.click();
+    await this.click(this.createButton);
+    await this.click(this.createPageButton);
+
     return new Pages();
   }
 

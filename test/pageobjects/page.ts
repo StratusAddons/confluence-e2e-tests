@@ -21,4 +21,10 @@ export default abstract class Page {
   public async pause(ms: number): Promise<void> {
     await browser.pause(ms);
   }
+
+  public async click(element: ChainablePromiseElement): Promise<void> {
+    const el = await element;
+    await el.waitForExist({ timeout: 20000 });
+    await el.click();
+  }
 }

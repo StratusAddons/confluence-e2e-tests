@@ -35,6 +35,7 @@ describe("Create Diagram Regression", () => {
         const pageTitle = `${basePageName}-${test.id}`;
 
         await page.publish(pageTitle);
+        await page.openInEditMode();
       });
     });
   });
