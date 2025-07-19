@@ -38,9 +38,6 @@ export default class PagesPage extends Page {
     await browser.keys(["/", "p", "l", "a", "n", "t"]);
 
     await this.click(this.plantUmlMacro);
-
-    // Remove this when not on local
-    await this.click($("button*=Visit Site"));
   }
 
   async confirmPublishedPage() {

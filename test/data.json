@@ -3,6 +3,6 @@
     "description": "dummy test",
     "id": 1,
     "validation": "Alice",
-    "diagram": "startuml\nBob -> Alice : hello\n@enduml"
+    "diagram": "Bob -> Alice : hello"
   }
 ]
