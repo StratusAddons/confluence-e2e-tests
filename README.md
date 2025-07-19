@@ -1,53 +1,85 @@
-Diagram Regression Tests
+# Diagram Regression Tests
 
-This repository contains an automated end-to-end (E2E) testing suite for the core diagram functionality of our Confluence Forge app, covering Create, Edit, and View scenarios. Tests are written in TypeScript using WebdriverIO and Mocha, and are designed to run daily against a dedicated Confluence test instance.
+This repository contains an automated end-to-end (E2E) testing suite for the core diagram functionality of our Confluence Forge app, covering Create, Edit, and View scenarios. Tests are written in TypeScript using WebdriverIO and Mocha, and are designed to run daily against a dedicated Confluence test instance. The suite:
 
-Note that the current setup was validated by exposing a local Forge tunnel via ngrok and generating PlantUML diagrams locally. Tests were executed with a personal Atlassian account; for stability and security, you should provision a dedicated service account with password-based (non-SSO) login.
+- Logs in via UI
+- Creates a fresh Confluence space per run (`Regression Test Space: DD-MM-YYYY-1`, with a `-2` retry suffix on failure)
+- Iterates data-driven PlantUML tests (positive and negative cases)
+- Inserts the `/plant` macro and validates SVG content
+- Captures screenshots on failure and deletes the test space on success
 
-Features
-• Automated Space Management: Creates a new space per run (Regression Test Space: DD-MM-YYYY-1), retries with -2 suffix on failure, and deletes the space on success.
-• Data-Driven Diagram Tests: Loads JSON test definitions (id, description, validation regex, PlantUML payload) and iterates through positive/negative scenarios.
-• Synthetic E2E Flows: Uses WebdriverIO page objects to log in, create pages, insert /plant macro, validate rendering, and assert SVG content.
-• Reporting & Screenshots: Captures pass/fail status, detailed error messages, and on-failure screenshots for debugging.
+> **Note:** This was initially validated by running a local Forge tunnel via **ngrok** and a local PlantUML server. Tests were executed with a personal Atlassian account; for reliability and security, you should provision a dedicated **service account** (non-SSO, password login, 2FA disabled) instead.
 
-Tech Stack & Tools
-• Node.js & TypeScript
-• WebdriverIO (v8+) with Mocha framework and @wdio/spec reporter
-• Chromedriver for local browser automation
-• node-fetch for REST API calls (space provisioning & cleanup)
-• ngrok + Forge Tunnel for local testing against a live Confluence instance
-• PlantUML server (local) for diagram generation during tests
+---
 
-Getting Started 1. Clone this repo:
+## Features
 
-git clone https://github.com/StratusAddons/confluence-e2e-tests.git
-cd confluence-e2e-tests
+- **Automated Space Provisioning & Cleanup**
+- **Data-Driven Diagram Scenarios** via JSON
+- **Page-Object Pattern** for reusable UI interactions
+- **Loading Indicators & iFrame Handling** (macro fullscreen)
+- **Screenshot Capture** on failures
 
-    2.	Install dependencies:
+## Tech Stack & Tools
 
-npm install
+- **Node.js & TypeScript**
+- **WebdriverIO** (v8+) + Mocha + spec reporter
+- **Chromedriver** service
+- **node-fetch** for Confluence REST API calls
+- **ngrok** + `forge tunnel` for local testing
+- **Local PlantUML server**
 
-    3.	Configure environment: create a .env file in the root (based on env.example)
+## Getting Started
 
-⚠️ Tests were originally run with a personal Google-SSO account; instead, use a non-SSO service account with 2FA disabled.
+1. **Clone**
 
-    4.	Start ngrok & Forge tunnel (if developing locally):
+   ```bash
+   git clone https://github.com/StratusAddons/confluence-e2e-tests.git
+   cd confluence-e2e-tests
+   ```
 
-forge tunnel --port 8000 &
-ngrok http 8000 --host-header=localhost
+2. **Install**
 
-Configure your Confluence app’s callback URLs to the ngrok address.
+   ```bash
+   npm install
+   ```
 
-    5.	Run tests:
+3. **Configure**  
+   Create a `.env` at project root:
 
-npx wdio run wdio.conf.ts
+   ```dotenv
+   CONFLUENCE_BASE_URL=https://your-test-instance.atlassian.net
+   CONFLUENCE_USER_EMAIL=svc-e2e@yourdomain.com
+   CONFLUENCE_USER_PASSWORD=YourSecretPassword
+   CONFLUENCE_API_TOKEN=your_api_token
+   ```
 
-Project Structure
+   ⚠️ Use a **service account** instead of personal SSO.
 
-├─ test/
-│ ├─ pageobjects/ # WebdriverIO page object classes
-│ ├─ specs/ # Mocha spec files (E2E flows)
-│ └─ testdata/ # JSON inputs for diagram scenarios
-├─ wdio.conf.ts # WebdriverIO configuration & hooks
-├─ tsconfig.json # TypeScript compiler options
-└─ package.json # dependencies & scripts
+4. **(Optional) Dev Tunnel**
+
+   ```bash
+   forge tunnel --port 8000 &
+   ngrok http 8000 --host-header=localhost
+   ```
+
+   Point your app’s callback URLs to the ngrok address.
+
+5. **Run Tests**
+   ```bash
+   npx wdio run wdio.conf.ts
+   ```
+
+## Project Structure
+
+```
+.
+├── data.json            # Test definitions (id, description, validation, PlantUML)
+├── package.json
+├── tsconfig.json
+├── wdio.conf.ts         # WDIO config & hooks (including space cleanup)
+└── test/
+    ├── pageobjects/     # Reusable UI page classes
+    ├── specs/           # Mocha E2E spec files
+    └── testdata/        # Additional JSON inputs
+```
