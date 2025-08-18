@@ -3,7 +3,7 @@ import Pages from "./pages.page";
 
 export default class SpacePage extends Page {
   get nameField() {
-    return $('input[name="name"]');
+    return $('textbox[name="Name this space"], input[name="name"]');
   }
   get keyField() {
     return $('input[name="key"]');
@@ -46,8 +46,14 @@ export default class SpacePage extends Page {
   }
 
   public async createPage() {
-    await this.click(this.createButton);
-    await this.click(this.createPageButton);
+    // Try clicking "Add your first page" link first, otherwise use Create button
+    const addFirstPageLink = $("link=Add your first page");
+    if (await addFirstPageLink.isExisting()) {
+      await addFirstPageLink.click();
+    } else {
+      await this.click(this.createButton);
+      await this.click(this.createPageButton);
+    }
 
     return new Pages();
   }
