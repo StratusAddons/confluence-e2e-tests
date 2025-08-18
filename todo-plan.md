@@ -119,29 +119,47 @@ This document tracks the complete implementation process for WDIO e2e automated 
 - ✅ Simplified diagram wait logic to avoid complex DOM detection in shadow elements
 - ✅ Added comprehensive logging for debugging
 
-**Final Test Results**:
+**Final Test Results with Publishing**:
 ```
-🎉 SUCCESS: 1 passing (2m 21.4s)
+🎉 SUCCESS: 1 passing (3m 14.7s)
 ✅ Spec Files: 1 passed, 1 total (100% completed)
-✅ Login successful
-✅ Space creation: "Regression Test Space: 18-08-2025-1"
+✅ Login successful with retry logic (attempt 2/2 succeeded)
+✅ Space creation: "Regression Test Space: 18-08-2025-2"
 ✅ PlantUML editor found: textarea[aria-label*="Editor content"]
 ✅ Diagram rendering completed
+✅ Page publishing successful: Found Update button and published
+✅ Screenshot captured: test-1-published.png (90,895 bytes)
+✅ Diagram validation: SVG found on published page
 ✅ PlantUML components detected: <stratus-plantuml-editor />, <stratus-viewer />, <viewer-toolbar />
-✅ Full e2e flow working perfectly
+✅ Complete e2e flow with publishing working perfectly
 ```
 
 ### 8. E2E Test Suite Implementation (COMPLETED)
-**Status**: 100% functional PlantUML e2e testing suite
+**Status**: 100% functional PlantUML e2e testing suite with publishing
 
 **Final Implementation**:
 - ✅ Complete end-to-end PlantUML diagram creation workflow
+- ✅ Proper page publishing after diagram creation (no more "unpublished changes")
+- ✅ Screenshot capture of published pages with diagrams
+- ✅ SVG diagram validation on published content
 - ✅ Robust selector handling with multiple fallbacks
 - ✅ Proper iframe switching and ngrok security bypass
+- ✅ Built-in retry logic for reliability (2-attempt setup with fallback)
 - ✅ Test data integration from data.json
 - ✅ Space cleanup and management
 - ✅ Error handling and debug screenshots
 - ✅ Production-ready test automation
+
+**Publishing Enhancement Results**:
+```
+✅ Publishing page with PlantUML diagram...
+✅ Found Update button, clicking...
+✅ Page published successfully
+✅ Taking screenshot for test 1...
+✅ Diagram found using selector: svg
+✅ Screenshot saved: test-1-published.png (90,895 bytes)
+✅ No "unpublished changes" flag remaining
+```
 
 ## 📋 OPTIONAL FUTURE ENHANCEMENTS
 
@@ -221,4 +239,4 @@ npx wdio run wdio.conf.ts
 - Full e2e test validation ✅
 - Production deployment ready ✅
 
-**🚀 ACHIEVEMENT**: Successfully created a complete, robust, production-ready WDIO e2e test suite for PlantUML diagram functionality in Confluence!
+**🚀 FINAL ACHIEVEMENT**: Successfully created a complete, robust, production-ready WDIO e2e test suite for PlantUML diagram functionality in Confluence with full page publishing, screenshot validation, and built-in retry logic for maximum reliability!
