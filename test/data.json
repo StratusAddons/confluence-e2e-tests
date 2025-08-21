@@ -1,8 +1,16 @@
 [
   {
-    "description": "dummy test",
     "id": 1,
-    "validation": "Alice",
-    "diagram": "Bob -> Alice : hello"
+    "type": "sequence",
+    "description": "Simple authentication request sequence diagram",
+    "validation": "Authentication Request",
+    "diagram": "@startuml\nAlice -> Bob: Authentication Request\nBob --> Alice: Authentication Response\n@enduml"
+  },
+  {
+    "id": 2,
+    "type": "sequence",
+    "description": "Basic hello sequence diagram",
+    "validation": "Hello",
+    "diagram": "@startuml\nAlice -> Bob: Hello\nBob -> Alice: Ok\n@enduml"
   }
 ]
