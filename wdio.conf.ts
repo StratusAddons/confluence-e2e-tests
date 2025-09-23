@@ -160,14 +160,24 @@ export const config: WebdriverIO.Config = {
   // The only one supported by default is 'dot'
   // see also: https://webdriver.io/docs/dot-reporter
 
-  // reporters: ['spec','junit',['allure', {outputDir: 'allure-results'}]],
-  reporters: ["spec"],
+  reporters: [
+    "spec",
+    "junit",
+    [
+      "allure",
+      {
+        outputDir: "allure-results",
+        disableWebdriverStepsReporting: true,
+        disableWebdriverScreenshotsReporting: false,
+      },
+    ],
+  ],
 
   // Options to be passed to Mocha.
   // See the full list at http://mochajs.org/
   mochaOpts: {
     ui: "bdd",
-    timeout: 600000, // Reduced from 5 hours to 10 minutes
+    timeout: 600000,
   },
 
   //

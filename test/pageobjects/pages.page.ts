@@ -194,7 +194,9 @@ export default class PagesPage extends Page {
     // Find and fill the PlantUML editor textbox using the correct selector
     // Try multiple selectors based on Playwright exploration
     const editorSelectors = [
+      'textbox[aria-label*="Editor content"]',
       'textarea[aria-label*="Editor content"]',
+      '[aria-label*="Editor content"]',
       'textarea',
       '[role="textbox"]',
       'textbox'

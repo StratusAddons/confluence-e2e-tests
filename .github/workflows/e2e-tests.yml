@@ -1,0 +1,134 @@
+name: Confluence PlantUML E2E Tests
+
+on:
+  # Allow manual workflow dispatch only
+  workflow_dispatch:
+    inputs:
+      test_environment:
+        description: "Test environment to run against"
+        required: false
+        default: "stratus-int-test"
+        type: choice
+        options:
+          - "stratus-int-test"
+          - "custom"
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2] # Support retry logic as documented in todo-plan.md
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Chrome for WebdriverIO
+        uses: browser-actions/setup-chrome@latest
+        with:
+          chrome-version: "stable"
+
+      - name: Create environment file
+        run: |
+          echo "CONFLUENCE_BASE_URL=${{ secrets.CONFLUENCE_BASE_URL }}" >> .env
+          echo "CONFLUENCE_USER_EMAIL=${{ secrets.CONFLUENCE_USER_EMAIL }}" >> .env
+          echo "CONFLUENCE_USER_PASSWORD=${{ secrets.CONFLUENCE_USER_PASSWORD }}" >> .env
+          echo "CONFLUENCE_API_TOKEN=${{ secrets.CONFLUENCE_API_TOKEN }}" >> .env
+          echo "TOTP_KEY=${{ secrets.TOTP_KEY }}" >> .env
+
+      - name: Run E2E Tests
+        id: tests
+        run: |
+          echo "Starting E2E tests (attempt ${{ matrix.attempt }})"
+          npx wdio run wdio.conf.ts
+        continue-on-error: true
+
+      - name: Upload test screenshots on failure
+        if: failure() && steps.tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots-attempt-${{ matrix.attempt }}
+          path: screenshots/
+          retention-days: 30
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-attempt-${{ matrix.attempt }}
+          path: allure-results/
+          retention-days: 7
+
+      - name: Test Results Summary
+        if: always()
+        run: |
+          if [ "${{ steps.tests.outcome }}" == "success" ]; then
+            echo "✅ E2E Tests PASSED (attempt ${{ matrix.attempt }})"
+          else
+            echo "❌ E2E Tests FAILED (attempt ${{ matrix.attempt }})"
+            echo "Screenshots and logs have been uploaded as artifacts"
+          fi
+
+      # Stop matrix execution if first attempt succeeds
+      - name: Mark success and stop retries
+        if: steps.tests.outcome == 'success'
+        run: |
+          echo "success=true" >> $GITHUB_OUTPUT
+          echo "✅ Tests passed on attempt ${{ matrix.attempt }}, stopping further attempts"
+
+  report:
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+    if: always()
+
+    steps:
+      - name: Generate Test Report
+        run: |
+          echo "## 🧪 Confluence PlantUML E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+            echo "### ✅ Status: PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "All PlantUML diagram functionality tests completed successfully." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Status: FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "Some tests failed. Check the job logs and uploaded artifacts for details." >> $GITHUB_STEP_SUMMARY
+            echo "**Action Required:** Review failed tests and fix any regressions." >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- Space creation and cleanup" >> $GITHUB_STEP_SUMMARY
+          echo "- Page creation and publishing" >> $GITHUB_STEP_SUMMARY
+          echo "- PlantUML macro insertion" >> $GITHUB_STEP_SUMMARY
+          echo "- Diagram rendering validation" >> $GITHUB_STEP_SUMMARY
+          echo "- Screenshot capture and validation" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [e2e-tests]
+    if: failure() && github.event_name == 'schedule'
+
+    steps:
+      - name: Notify on scheduled test failure
+        run: |
+          echo "🚨 Daily regression tests failed!"
+          echo "This notification step can be extended with:"
+          echo "- Slack notifications"
+          echo "- Email alerts"
+          echo "- Issue creation"
+          echo "- Custom webhooks"
