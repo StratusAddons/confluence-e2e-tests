@@ -1,8 +1,142 @@
 [
   {
-    "description": "dummy test",
     "id": 1,
+    "type": "sequence",
+    "description": "Simple authentication request sequence diagram",
+    "validation": "Authentication Request",
+    "diagram": "@startuml\nAlice -> Bob: Authentication Request\nBob --> Alice: Authentication Response\n@enduml"
+  },
+  {
+    "id": 2,
+    "type": "sequence",
+    "description": "Basic hello sequence diagram",
+    "validation": "Hello",
+    "diagram": "@startuml\nAlice -> Bob: Hello\nBob -> Alice: Ok\n@enduml"
+  },
+  {
+    "id": 3,
+    "type": "usecase",
+    "description": "Basic use case diagram with multiple use cases",
+    "validation": "First usecase",
+    "diagram": "@startuml\n(First usecase)\n(Another usecase) as (UC2)\nusecase UC3\nusecase (Last\\nusecase) as UC4\n@enduml"
+  },
+  {
+    "id": 4,
+    "type": "usecase",
+    "description": "Actor definitions in use case diagram",
+    "validation": "First Actor",
+    "diagram": "@startuml\n:First Actor:\n:Another\\nactor: as Man2\nactor Woman3\nactor :Last actor: as Person1\n@enduml"
+  },
+  {
+    "id": 5,
+    "type": "class",
+    "description": "Class diagram with inheritance",
+    "validation": "This is",
+    "diagram": "@startuml\nclass \"This is my class\" as class1\nclass class2 as \"It works this way too\"\n\nclass2 *-- \"foo/dummy\" : use\n@enduml"
+  },
+  {
+    "id": 6,
+    "type": "class",
+    "description": "Simple class with fields and methods",
+    "validation": "Dummy",
+    "diagram": "@startuml\nclass Dummy {\n  +field1\n  -field2\n  ~method1()\n  +method2()\n}\n@enduml"
+  },
+  {
+    "id": 7,
+    "type": "activity",
+    "description": "Basic activity diagram with hello world",
+    "validation": "Hello world",
+    "diagram": "@startuml\n:Hello world;\n:This is defined on several **lines**;\n@enduml"
+  },
+  {
+    "id": 8,
+    "type": "activity",
+    "description": "Activity diagram with start and stop",
+    "validation": "stop",
+    "diagram": "@startuml\nstart\n:Hello world;\n:This is defined on several **lines**;\nstop\n@enduml"
+  },
+  {
+    "id": 9,
+    "type": "component",
+    "description": "Component diagram with multiple components",
+    "validation": "Comp3",
+    "diagram": "@startuml\n[First component]\n[Another component] as Comp2\ncomponent Comp3\ncomponent [Last\\ncomponent] as Comp4\n@enduml"
+  },
+  {
+    "id": 10,
+    "type": "component",
+    "description": "Component diagram with connections",
+    "validation": "HTTP",
+    "diagram": "@startuml\nDataAccess - [First Component]\n[First Component] ..> HTTP : use\n@enduml"
+  },
+  {
+    "id": 11,
+    "type": "state",
+    "description": "Basic state diagram with transitions",
+    "validation": "State1",
+    "diagram": "@startuml\n[*] --> State1\nState1 --> [*]\nState1 : this is a string\nState1 : this is another string\nState1 -> State2\nState2 --> [*]\n@enduml"
+  },
+  {
+    "id": 12,
+    "type": "state",
+    "description": "State diagram with hidden descriptions",
+    "validation": "State1",
+    "diagram": "@startuml\nhide empty description\n[*] --> State1\nState1 --> [*]\nState1 : this is a string\nState1 : this is another string\nState1 -> State2\nState2 --> [*]\n@enduml"
+  },
+  {
+    "id": 13,
+    "type": "object",
+    "description": "Basic object diagram",
+    "validation": "firstObject",
+    "diagram": "@startuml\nobject firstObject\nobject \"My Second Object\" as o2\n@enduml"
+  },
+  {
+    "id": 14,
+    "type": "object",
+    "description": "Object diagram with attributes",
+    "validation": "user",
+    "diagram": "@startuml\nobject user {\n  name = \"Dummy\"\n  id = 123\n}\n@enduml"
+  },
+  {
+    "id": 15,
+    "type": "deployment",
+    "description": "Basic deployment diagram with nodes",
+    "validation": "node2",
+    "diagram": "@startuml\nnode node1\nnode node2\nnode1 -- node2 : label1\n@enduml"
+  },
+  {
+    "id": 16,
+    "type": "deployment",
+    "description": "Deployment diagram with artifacts",
+    "validation": "artifact2",
+    "diagram": "@startuml\nartifact artifact1\nartifact artifact2\nartifact1 --> artifact2\n@enduml"
+  },
+  {
+    "id": 17,
+    "type": "gantt",
+    "description": "Basic Gantt chart with prototype tasks",
+    "validation": "Test prototype",
+    "diagram": "@startgantt\n[Prototype design] requires 15 days\n[Test prototype] requires 10 days\n[Test prototype] starts at [Prototype design]'s end\n@endgantt"
+  },
+  {
+    "id": 18,
+    "type": "gantt",
+    "description": "Gantt chart with resource assignments",
     "validation": "Alice",
-    "diagram": "Bob -> Alice : hello"
+    "diagram": "@startgantt\n[Task1] on {Alice} requires 10 days\n[Task2] on {Bob:50%} requires 2 days\nthen [Task3] on {Alice:25%} requires 1 days\n@endgantt"
+  },
+  {
+    "id": 19,
+    "type": "mindmap",
+    "description": "Linux distributions mindmap",
+    "validation": "Debian",
+    "diagram": "@startmindmap\n* Debian\n** Ubuntu\n*** Linux Mint\n*** Kubuntu\n*** Lubuntu\n*** KDE Neon\n** LMDE\n** SolydXK\n** SteamOS\n** Raspbian with a very long name\n*** <s>Raspmbc</s> => OSMC\n*** <s>Raspyfi</s> => Volumio\n@endmindmap"
+  },
+  {
+    "id": 20,
+    "type": "mindmap",
+    "description": "Simple mindmap with nested nodes",
+    "validation": "root node",
+    "diagram": "@startmindmap\n* root node\n    * some first level node\n        * second level node\n        * another second level node\n    * another first level node\n@endmindmap"
   }
 ]

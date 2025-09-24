@@ -41,8 +41,11 @@ export default class PagesPage extends Page {
   }
 
   async createMacro() {
-    // Wait a bit for the page to fully load after navigation
-    await browser.pause(3000);
+    // Wait for page to fully load using dynamic wait
+    await browser.waitUntil(async () => {
+      const readyStates = await browser.execute(() => document.readyState);
+      return readyStates === 'complete';
+    }, { timeout: 10000, timeoutMsg: 'Page did not load completely' });
     
     // Find any editable content area using multiple selectors
     const contentSelectors = [
@@ -81,15 +84,19 @@ export default class PagesPage extends Page {
       }
     }
 
-    // Click in the content area
+    // Click in the content area and wait for focus
     await contentArea.click();
-    await browser.pause(1000);
+    await contentArea.waitForClickable({ timeout: 5000 });
 
     // Try typing /plant first
     await browser.keys(["/", "p", "l", "a", "n", "t"]);
     
-    // Wait a moment for popup to appear
-    await browser.pause(2000);
+    // Wait for PlantUML suggestion to appear
+    await browser.waitUntil(async () => {
+      return await this.plantUmlMacro.isExisting();
+    }, { timeout: 5000, timeoutMsg: 'PlantUML macro option did not appear' }).catch(() => {
+      console.log('PlantUML macro not found via /plant, will try Insert elements');
+    });
     
     // Check if PlantUML option is visible, if not use Insert elements button approach
     if (!(await this.plantUmlMacro.isExisting())) {
@@ -126,7 +133,9 @@ export default class PagesPage extends Page {
         
         await this.elementsSearchBox.waitForExist({ timeout: 5000 });
         await this.elementsSearchBox.setValue("plant");
-        await browser.pause(1000);
+        await browser.waitUntil(async () => {
+          return await this.plantUmlMacro.isExisting();
+        }, { timeout: 3000, timeoutMsg: 'PlantUML option did not appear in search' });
       } else {
         console.log("Could not find Insert elements button, taking screenshot");
         await browser.saveScreenshot('./screenshots/debug-no-insert-button.png');
@@ -134,6 +143,7 @@ export default class PagesPage extends Page {
     }
 
     await this.plantUmlMacro.waitForExist({ timeout: 5000 });
+    await this.plantUmlMacro.waitForClickable({ timeout: 5000 });
     await this.click(this.plantUmlMacro);
   }
 
@@ -174,14 +184,19 @@ export default class PagesPage extends Page {
     const visitBtn = await $("button*=Visit Site");
     if (await visitBtn.isExisting()) {
       await visitBtn.click();
-      // Wait for the editor to load after visiting site
-      await browser.pause(2000);
+      // Wait for the editor to load dynamically
+      await browser.waitUntil(async () => {
+        const editorExists = await $('textarea, [role="textbox"]').isExisting();
+        return editorExists;
+      }, { timeout: 5000, timeoutMsg: 'Editor did not load after visiting site' });
     }
 
     // Find and fill the PlantUML editor textbox using the correct selector
     // Try multiple selectors based on Playwright exploration
     const editorSelectors = [
+      'textbox[aria-label*="Editor content"]',
       'textarea[aria-label*="Editor content"]',
+      '[aria-label*="Editor content"]',
       'textarea',
       '[role="textbox"]',
       'textbox'
@@ -209,10 +224,51 @@ export default class PagesPage extends Page {
     // Generate preview (Ctrl+Enter)
     await browser.keys(["Control", "Enter", "NULL"]);
     
-    // Wait for diagram to render - use a simple pause since diagram elements
-    // may be in shadow DOM or other contexts that are hard to detect
+    // Wait for diagram to render using smart waiting
     console.log('Waiting for diagram to render...');
-    await browser.pause(15000); // 15 seconds should be enough for most diagrams
+    await browser.waitUntil(async () => {
+      try {
+        // Check for diagram elements that indicate rendering is complete
+        const svgElements = await $$('svg');
+        const imageElements = await $$('img');
+        const canvasElements = await $$('canvas');
+        
+        // If any visual element is found, diagram is likely rendered
+        const svgCount = svgElements.length;
+        const imageCount = imageElements.length;
+        const canvasCount = canvasElements.length;
+        
+        if (svgCount > 0 || imageCount > 0 || canvasCount > 0) {
+          console.log('Diagram element detected');
+          return true;
+        }
+        
+        // Also check for any element that might contain rendered content
+        const diagramContainers = await $$('[class*="diagram"], [id*="diagram"], [class*="plantuml"]');
+        const containerCount = diagramContainers.length;
+        if (containerCount > 0) {
+          for (const container of diagramContainers) {
+            const hasContent = await container.getText();
+            if (hasContent && hasContent.trim().length > 0) {
+              console.log('Diagram container with content found');
+              return true;
+            }
+          }
+        }
+        
+        return false;
+      } catch (e) {
+        return false;
+      }
+    }, { 
+      timeout: 30000, 
+      interval: 1000,
+      timeoutMsg: 'Diagram did not render within 30 seconds' 
+    }).catch(() => {
+      console.log('Smart diagram wait failed, using fallback delay');
+      // Fallback to shorter pause if smart waiting fails
+      return browser.pause(5000);
+    });
     console.log('Diagram rendering wait completed');
 
     // Click Publish button
@@ -234,8 +290,20 @@ export default class PagesPage extends Page {
       }
     }
 
-    // Wait for diagram publishing to complete
-    await browser.pause(5000);
+    // Wait for diagram publishing to complete using smart wait
+    await browser.waitUntil(async () => {
+      try {
+        // Check if we're still in publish modal or if it's completed
+        const publishBtn = await $('button*=Publish');
+        const isStillPublishing = await publishBtn.isExisting();
+        return !isStillPublishing; // Return true when publish button is gone
+      } catch (e) {
+        return true; // If we can't find the button, assume publishing is done
+      }
+    }, { timeout: 10000, interval: 500, timeoutMsg: 'Diagram publishing did not complete' }).catch(() => {
+      console.log('Smart publish wait failed, using fallback delay');
+      return browser.pause(2000);
+    });
 
     // Switch back to parent frame
     await browser.switchFrame(null);

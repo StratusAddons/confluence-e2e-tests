@@ -16,7 +16,13 @@ describe("Create Diagram Regression", () => {
   const checkIfLoggedIn = async (): Promise<boolean> => {
     try {
       await browser.url(`${process.env.CONFLUENCE_BASE_URL}/wiki/home`);
-      await browser.pause(2000);
+      await browser.waitUntil(
+        async () => {
+          const readyState = await browser.execute(() => document.readyState);
+          return readyState === "complete";
+        },
+        { timeout: 10000, timeoutMsg: "Home page did not load completely" }
+      );
 
       // Check for login indicators - adjust these selectors based on your Confluence instance
       const loginIndicators = [
@@ -98,8 +104,15 @@ describe("Create Diagram Regression", () => {
           process.env.CONFLUENCE_USER_PASSWORD!
         );
         console.log("✅ Login successful");
-        // Navigate to home
+        // Navigate to home and wait for load
         await browser.url(`${process.env.CONFLUENCE_BASE_URL}/wiki/home`);
+        await browser.waitUntil(
+          async () => {
+            const readyState = await browser.execute(() => document.readyState);
+            return readyState === "complete";
+          },
+          { timeout: 10000, timeoutMsg: "Home page did not load after login" }
+        );
         console.log("✅ Navigation to home successful");
       } else {
         console.log("✅ Already logged in, skipping login step");
@@ -152,8 +165,8 @@ describe("Create Diagram Regression", () => {
       await performSetup(attempt);
 
       if (!setupSuccessful && attempt === 1) {
-        console.log("⏳ Waiting 3 seconds before retry...");
-        await browser.pause(3000);
+        console.log("⏳ Waiting 2 seconds before retry...");
+        await browser.pause(2000); // Reduced from 3 seconds
       }
     }
 
@@ -193,37 +206,64 @@ describe("Create Diagram Regression", () => {
           await page.createMacro();
 
           // Handle PlantUML editor
-          await page.handlePlantUMLEditor(test.diagram, `${basePageName}-${test.id}`);
+          await page.handlePlantUMLEditor(
+            test.diagram,
+            `${basePageName}-${test.id}`
+          );
 
           // Now we're back in the main Confluence editor - publish the page with the diagram
-          console.log('Publishing page with PlantUML diagram...');
-          
+          console.log("Publishing page with PlantUML diagram...");
+
           // Look for Update button in the main editor
-          const updateButton = await $('button*=Update');
+          const updateButton = await $("button*=Update");
           if (await updateButton.isExisting()) {
-            console.log('Found Update button, clicking...');
+            console.log("Found Update button, clicking...");
             await updateButton.waitForClickable({ timeout: 10000 });
             await updateButton.click();
-            
-            // Wait for page to be published
-            await browser.pause(3000);
-            console.log('Page published successfully');
+
+            // Wait for page to be published using smart wait
+            await browser
+              .waitUntil(
+                async () => {
+                  const currentUrl = await browser.getUrl();
+                  return !currentUrl.includes("/edit"); // No longer in edit mode
+                },
+                {
+                  timeout: 10000,
+                  timeoutMsg: "Page did not publish successfully",
+                }
+              )
+              .catch(() => {
+                console.log("Smart publish wait failed, using fallback");
+                return browser.pause(1500);
+              });
+            console.log("Page published successfully");
           } else {
-            console.log('Update button not found, looking for other publish options...');
+            console.log(
+              "Update button not found, looking for other publish options..."
+            );
             // Alternative selectors for publish button
             const alternativeButtons = [
-              'button*=Publish',
+              "button*=Publish",
               '[data-testid="publish-button"]',
-              'button[id="publish-button"]'
+              'button[id="publish-button"]',
             ];
-            
+
             for (const selector of alternativeButtons) {
               const btn = await $(selector);
               if (await btn.isExisting()) {
                 console.log(`Found publish button using: ${selector}`);
                 await btn.waitForClickable({ timeout: 10000 });
                 await btn.click();
-                await browser.pause(3000);
+                await browser
+                  .waitUntil(
+                    async () => {
+                      const currentUrl = await browser.getUrl();
+                      return !currentUrl.includes("/edit");
+                    },
+                    { timeout: 8000 }
+                  )
+                  .catch(() => browser.pause(1500));
                 break;
               }
             }
@@ -237,62 +277,100 @@ describe("Create Diagram Regression", () => {
 
           // Validate diagram is visible on published page
           try {
-            console.log('Validating diagram content...');
-            // Wait for any diagram content to be visible
-            await browser.pause(2000);
-            
+            console.log("Validating diagram content...");
+            // Wait for diagram content to be visible using smart wait
+            await browser
+              .waitUntil(
+                async () => {
+                  const diagramElements = await $$(
+                    'svg, [class*="diagram"], [class*="plantuml"], img[alt*="diagram"]'
+                  );
+                  //@ts-ignore
+                  return diagramElements.length > 0;
+                },
+                { timeout: 5000, timeoutMsg: "Diagram elements not found" }
+              )
+              .catch(() => {
+                console.log(
+                  "Diagram elements wait failed, proceeding with validation"
+                );
+              });
+
             // Look for PlantUML diagram elements
             const diagramSelectors = [
-              'svg', // SVG diagram
+              "svg", // SVG diagram
               '[class*="diagram"]',
-              '[class*="plantuml"]', 
+              '[class*="plantuml"]',
               'img[alt*="diagram"]',
-              '.confluence-content img' // Confluence embedded image
+              ".confluence-content img", // Confluence embedded image
             ];
-            
+
             let diagramFound = false;
             for (const selector of diagramSelectors) {
               const diagramElement = await $(selector);
               if (await diagramElement.isExisting()) {
                 console.log(`✅ Diagram found using selector: ${selector}`);
                 diagramFound = true;
-                
+
                 // Try to validate content if possible
-                if (selector === 'svg') {
+                if (selector === "svg") {
                   try {
                     const svgText = await diagramElement.getText();
                     if (svgText.includes(test.validation)) {
-                      console.log(`✅ Diagram validation successful: Found "${test.validation}"`);
+                      console.log(
+                        `✅ Diagram validation successful: Found "${test.validation}"`
+                      );
                     }
                   } catch (e) {
-                    console.log('SVG text validation skipped:', e);
+                    console.log("SVG text validation skipped:", e);
                   }
                 }
                 break;
               }
             }
-            
+
             if (!diagramFound) {
-              console.log('⚠️ No diagram elements found, but test continues...');
+              console.log(
+                "⚠️ No diagram elements found, but test continues..."
+              );
             }
-            
           } catch (error) {
             console.log(`Validation skipped for test ${test.id}:`, error);
           }
 
           // Navigate back to space home
-          console.log('Navigating back to space...');
+          console.log("Navigating back to space...");
           try {
-            await browser.url(`${process.env.CONFLUENCE_BASE_URL}/wiki/spaces/${spaceKey}/overview`);
-            await browser.pause(2000);
-            console.log('✅ Navigation to space completed');
+            await browser.url(
+              `${process.env.CONFLUENCE_BASE_URL}/wiki/spaces/${spaceKey}/overview`
+            );
+            await browser.waitUntil(
+              async () => {
+                const readyState = await browser.execute(
+                  () => document.readyState
+                );
+                return readyState === "complete";
+              },
+              { timeout: 8000, timeoutMsg: "Space page did not load" }
+            );
+            console.log("✅ Navigation to space completed");
           } catch (error) {
-            console.log('Navigation to space failed, using fallback...', error);
+            console.log("Navigation to space failed, using fallback...", error);
             // Fallback navigation
             const spaceLink = await $(`a*=${spaceName}`);
             if (await spaceLink.isExisting()) {
               await spaceLink.click();
-              await browser.pause(2000);
+              await browser
+                .waitUntil(
+                  async () => {
+                    const readyState = await browser.execute(
+                      () => document.readyState
+                    );
+                    return readyState === "complete";
+                  },
+                  { timeout: 5000 }
+                )
+                .catch(() => browser.pause(1000));
             }
           }
         }

@@ -21,5 +21,9 @@
     "chromedriver": "^138.0.2",
     "node-fetch": "^2.7.0",
     "webdriverio": "^9.17.0"
+  },
+  "dependencies": {
+    "notp": "^2.0.3",
+    "thirty-two": "^1.0.2"
   }
 }

@@ -123,11 +123,11 @@ export const config: WebdriverIO.Config = {
   // baseUrl: 'http://localhost:8080',
   //
   // Default timeout for all waitFor* commands.
-  waitforTimeout: 30000,
+  waitforTimeout: 15000, // Reduced from 30s
   //
   // Default timeout in milliseconds for request
   // if browser driver or grid doesn't send response
-  connectionRetryTimeout: 600000, // 10 minutes for PlantUML diagram rendering
+  connectionRetryTimeout: 120000, // Reduced from 10 minutes to 2 minutes
   //
   // Default request retries count
   connectionRetryCount: 3,
@@ -160,14 +160,24 @@ export const config: WebdriverIO.Config = {
   // The only one supported by default is 'dot'
   // see also: https://webdriver.io/docs/dot-reporter
 
-  // reporters: ['spec','junit',['allure', {outputDir: 'allure-results'}]],
-  reporters: ["spec"],
+  reporters: [
+    "spec",
+    "junit",
+    [
+      "allure",
+      {
+        outputDir: "allure-results",
+        disableWebdriverStepsReporting: true,
+        disableWebdriverScreenshotsReporting: false,
+      },
+    ],
+  ],
 
   // Options to be passed to Mocha.
   // See the full list at http://mochajs.org/
   mochaOpts: {
     ui: "bdd",
-    timeout: 18000000,
+    timeout: 600000,
   },
 
   //
