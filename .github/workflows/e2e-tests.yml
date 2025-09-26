@@ -20,8 +20,6 @@ jobs:
 
     strategy:
       fail-fast: false
-      matrix:
-        attempt: [1, 2] # Support retry logic as documented in todo-plan.md
 
     steps:
       - name: Checkout code
@@ -52,15 +50,14 @@ jobs:
       - name: Run E2E Tests
         id: tests
         run: |
-          echo "Starting E2E tests (attempt ${{ matrix.attempt }})"
+          echo "Starting E2E tests"
           npx wdio run wdio.conf.ts
-        continue-on-error: true
 
       - name: Upload test screenshots on failure
         if: failure() && steps.tests.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: test-screenshots-attempt-${{ matrix.attempt }}
+          name: test-screenshots
           path: screenshots/
           retention-days: 30
 
@@ -68,7 +65,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results-attempt-${{ matrix.attempt }}
+          name: allure-results
           path: allure-results/
           retention-days: 7
 
@@ -76,18 +73,12 @@ jobs:
         if: always()
         run: |
           if [ "${{ steps.tests.outcome }}" == "success" ]; then
-            echo "✅ E2E Tests PASSED (attempt ${{ matrix.attempt }})"
+            echo "✅ E2E Tests PASSED"
           else
-            echo "❌ E2E Tests FAILED (attempt ${{ matrix.attempt }})"
+            echo "❌ E2E Tests FAILED"
             echo "Screenshots and logs have been uploaded as artifacts"
           fi
 
-      # Stop matrix execution if first attempt succeeds
-      - name: Mark success and stop retries
-        if: steps.tests.outcome == 'success'
-        run: |
-          echo "success=true" >> $GITHUB_OUTPUT
-          echo "✅ Tests passed on attempt ${{ matrix.attempt }}, stopping further attempts"
 
   report:
     runs-on: ubuntu-latest

@@ -1,7 +1,7 @@
 export const config: WebdriverIO.Config = {
   async onPrepare(config, capabilities) {
     const auth = Buffer.from(
-      `${process.env.CONFLUENCE_USER_EMAIL}:${process.env.CONFLUENCE_API_TOKEN}`
+      `${process.env.CONFLUENCE_API_MAIL}:${process.env.CONFLUENCE_API_TOKEN}`
     ).toString("base64");
 
     try {
